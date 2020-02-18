@@ -11,7 +11,7 @@ import UIKit
 class ViewController: UITableViewController {
 
     var pictures = [String]()
-
+    var viewedPic = [String:Int]()
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -39,6 +39,7 @@ class ViewController: UITableViewController {
         for item in items {
             if item.hasPrefix("nssl") {
                 pictures.append(item)
+                viewedPic[item] = 0
             }
         }
         pictures.sort()
@@ -54,6 +55,8 @@ class ViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Picture", for: indexPath)
         cell.textLabel?.text = pictures[indexPath.row]
         cell.imageView?.image = UIImage(named: pictures[indexPath.row])
+        loadViewed()
+        cell.detailTextLabel?.text = String(viewedPic[pictures[indexPath.row]]!)
         return cell
     }
 
@@ -63,6 +66,33 @@ class ViewController: UITableViewController {
             vc.selectedPictureNumber = indexPath.row + 1
             vc.totalPictures = pictures.count
             navigationController?.pushViewController(vc, animated: true)
+            viewedPic[pictures[indexPath.row]]! += 1
+            addViewed()
+            tableView.reloadData()
+        }
+    }
+    
+    func loadViewed(){
+        let defaults = UserDefaults.standard
+
+        if let savedViewed = defaults.object(forKey: "viewed") as? Data {
+            let jsonDecoder = JSONDecoder()
+
+            do {
+                viewedPic = try jsonDecoder.decode([String:Int].self, from: savedViewed)
+            } catch {
+                print("Failed to load people")
+            }
+        }
+    }
+    
+    func addViewed() {
+        let jsonEncoder = JSONEncoder()
+        if let savedData = try? jsonEncoder.encode(viewedPic) {
+            let defaults = UserDefaults.standard
+            defaults.set(savedData, forKey: "viewed")
+        } else {
+            print("Failed to save viewed pic.")
         }
     }
 }
